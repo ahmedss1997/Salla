@@ -19,3 +19,8 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #76E8CD #f1f1f1;
+}

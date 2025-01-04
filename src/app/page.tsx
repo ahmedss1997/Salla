@@ -1,101 +1,191 @@
-import Image from "next/image";
+"use client";
+
+import Breadcrumb from '../components/Breadcrumb';
+import AddCouponDialog from "../components/AddCouponDialog";
+import EditCouponDialog from "../components/EditCouponDialog";
+import { useState, useEffect } from 'react';
+import { GoPencil, GoPlus } from 'react-icons/go';
+import { AiOutlineUnorderedList } from 'react-icons/ai';
+import { MdDelete } from 'react-icons/md';
+import { IoEyeSharp } from 'react-icons/io5';
+import { useRouter } from "next/navigation";
+import { useTranslation } from 'react-i18next';
+import { iCoupon } from "@/types/types";
+import { couponsData } from '@/code/db';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const storedData = JSON.parse(localStorage.getItem("coupons") || "[]");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [coupons, setCoupons] = useState<iCoupon[]>(storedData.length > 0 ? storedData : couponsData);
+  const [editCouponData, setEditCouponData] = useState<iCoupon | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const { t } = useTranslation();
+  const router = useRouter();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    localStorage.setItem("coupons", JSON.stringify(coupons));
+  }, [coupons]);
+
+  const handleAddCoupon = (newCoupon: iCoupon) => {
+    setCoupons([...coupons, { ...newCoupon}]);
+  };
+  
+  const handleEditCoupon = (updatedCoupon: iCoupon) => {
+    setCoupons((prevCoupons) =>
+      prevCoupons.map((coupon) =>
+        coupon.id === updatedCoupon.id ? { ...coupon, ...updatedCoupon } : coupon
+      )
+    );
+  };
+
+  const handleDeleteCoupon = (id: string) => {
+    setCoupons(coupons.filter((coupon) => coupon.id !== id));
+  };
+
+  const openEditDialog = (coupon: iCoupon) => {
+    setEditCouponData(coupon);
+    setIsEditDialogOpen(true);
+  };
+
+  const toggleDropdown = (couponId: string) => {
+    setActiveDropdown((prev) => (prev === couponId ? null : couponId));
+  };
+
+  const handleStatusChange = (couponId: string, status: number) => {
+    setCoupons((prevCoupons) =>
+      prevCoupons.map((coupon) =>
+        coupon.id === couponId ? { ...coupon, status } : coupon
+      )
+    );
+    setActiveDropdown(null);
+  };
+
+  return (
+    <div>
+        <Breadcrumb paths={[t('copuons')]} />
+        <div className="p-6">
+            <button
+              onClick={() => setIsAddDialogOpen(true)}
+              className="px-4 py-2 bg-primary rounded-md flex items-center text-secondary"
+            >
+              <span><GoPlus /></span>
+              {t('add')}
+            </button>
+            {/* Add Coupon Dialog */}
+            <AddCouponDialog
+              isOpen={isAddDialogOpen}
+              onClose={() => setIsAddDialogOpen(false)}
+              onSave={handleAddCoupon}
+              existingCoupons={coupons}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+
+            {/* Edit Coupon Dialog */}
+            <EditCouponDialog
+              isOpen={isEditDialogOpen}
+              onClose={() => setIsEditDialogOpen(false)}
+              onSave={handleEditCoupon}
+              initialData={editCouponData}
+            />
+            <div className='border border-grayMark rounded-md mt-5 overflow-auto'>
+              <div className='flex items-center p-4'>
+                <span className='mx-2'><AiOutlineUnorderedList /></span>
+                <h3 className='text-lightBlack text-xl'>{t('copuons')}</h3>
+              </div>
+              <div className='flex'>
+                <div className='flex items-center p-4'>
+                  <span className='mx-2 w-5 h-2 rounded-lg bg-primary'></span>
+                  <h3 className='text-grayPath'>{t('active')}</h3>
+                </div>
+                <div className='flex items-center p-4'>
+                  <span className='mx-2 w-5 h-2 rounded-lg bg-orange-400'></span>
+                  <h3 className='text-grayPath'>{t('expired')}</h3>
+                </div>
+                <div className='flex items-center p-4'>
+                  <span className='mx-2 w-5 h-2 rounded-lg bg-red-500'></span>
+                  <h3 className='text-grayPath'>{t('closed')}</h3>
+                </div>
+              </div>
+              <table className="mt-6 w-full bg-white rounded-md shadow-md">
+                <thead>
+                  <tr className="bg-subGray text-justify">
+                    <th className="p-4 text-lightBlack font-normal">{t('couponTitle')}</th>
+                    <th className="p-4 text-lightBlack font-normal">{t('couponStartDate')}</th>
+                    <th className="p-4 text-lightBlack font-normal">{t('couponEndDate')}</th>
+                    <th className="p-4 text-lightBlack font-normal">{t('couponStatus')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {coupons.map((coupon) => (
+                    <tr key={coupon.id} className="border-b">
+                      <td className="p-4">
+                        <span
+                          className={`mx-2 w-5 h-2 rounded-lg inline-block ${
+                            coupon.status === 1
+                              ? "bg-primary"
+                              : coupon.status === 0
+                              ? "bg-orange-400"
+                              : "bg-red-500"
+                            }`}
+                          >
+                        </span> 
+                        {coupon.code}
+                      </td>
+                      <td className="p-4">{coupon.startDate}</td>
+                      <td className="p-4">{coupon.endDate}</td>
+                      <td className="p-4 flex gap-2">
+                        <button
+                          onClick={() => router.push(`/view/${coupon.code}`)}
+                          className="text-blue-500"
+                        >
+                          <IoEyeSharp className='text-2xl' />
+                        </button>
+                        <button
+                          onClick={() => openEditDialog(coupon)}
+                          className="text-blue-500"
+                        >
+                          <GoPencil className='text-2xl' />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCoupon(coupon.id)}
+                          className="text-red-500"
+                        >
+                          <MdDelete className='text-2xl' />
+                        </button>
+                        <div className="relative">
+                          <button
+                            className={`text-white px-2 py-1 rounded-md ${
+                              coupon.status === 1
+                                ? "bg-primary"
+                                : coupon.status === 0
+                                ? "bg-orange-400"
+                                : "bg-red-500"
+                            }`}
+                            onClick={() => toggleDropdown(coupon.id)}
+                          >
+                          {coupon.status === 1 ? t('active') : coupon.status === 0 ? t('expired') : t('closed')}
+                          </button>
+                          {activeDropdown === coupon.id && (
+                            <ul className="absolute top-8 left-0 z-10 w-40 bg-white border rounded-md shadow-lg">
+                              {[t('active'), t('expired'), t('closed')].map((status, i) => (
+                                <li
+                                  key={status}
+                                  onClick={() => handleStatusChange(coupon.id, i == 0 ? 1 : i == 1 ? 0 : 2 )}
+                                  className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                                >
+                                  {t(status)}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
