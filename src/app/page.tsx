@@ -14,14 +14,18 @@ import { iCoupon } from "@/types/types";
 import { couponsData } from '@/code/db';
 
 export default function Home() {
-  const storedData = JSON.parse(localStorage.getItem("coupons") || "[]");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [coupons, setCoupons] = useState<iCoupon[]>(storedData.length > 0 ? storedData : couponsData);
+  const [coupons, setCoupons] = useState<iCoupon[]>([]);
   const [editCouponData, setEditCouponData] = useState<iCoupon | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const { t } = useTranslation();
   const router = useRouter();
+
+  useEffect(() => {
+    const storedData = JSON.parse(localStorage.getItem("coupons") || "[]");
+    setCoupons(storedData.length > 0 ? storedData : couponsData);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("coupons", JSON.stringify(coupons));
